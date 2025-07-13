@@ -3,6 +3,8 @@ import css from "./App.module.css";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
 import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
+import { toast } from "react-hot-toast";
 import type { Movie } from "../../types/movie";
 import { fetchMovies } from "../../services/movieService";
 import SearchBar from "../SearchBar/SearchBar";
@@ -19,29 +21,35 @@ export default function App() {
   const { data, error, isLoading, isError, isSuccess } = useQuery({
     queryKey: ["movies", searchValue, page],
     queryFn: () => fetchMovies({ query: searchValue, page }),
-    enabled: searchValue.length > 0, //  Запит активується тільки після введення пошукового запитуесть запрос
+    enabled: searchValue.length > 0, 
     placeholderData: keepPreviousData,
   });
 
   const handleSubmit = (newSearchValue: string) => {
-    setSearchValue(newSearchValue); // передаётся в useQuery
-    setPage(1); // сбрасываем пагинацию на первую страницу
+    setSearchValue(newSearchValue); 
+    setPage(1); 
   };
 
   const handlePageClick = ({ selected }: { selected: number }) => {
-    setPage(selected + 1); // Змінюємо сторінку на вибрану в реакт пагинейт
+    setPage(selected + 1); 
   };
 
   const handleSelect = (movie: Movie) => {
-    if (!movie) return; // захист від некоректних даних
-    setSelectedMovie(movie); // Встановлюємо вибраний фільм
+    if (!movie) return; 
+    setSelectedMovie(movie);
   };
 
   const closeModal = () => {
-    setSelectedMovie(null); // Закриваємо модальне вікно
+    setSelectedMovie(null); 
   };
 
   const totalPages = data?.total_pages ?? 0;
+
+  useEffect(() => {
+  if (isSuccess && data?.results?.length === 0) {
+    toast.error("No movies found for your request.");
+  }
+}, [isSuccess, data]);
 
   return (
     <div className={css.app}>
@@ -53,10 +61,6 @@ export default function App() {
         <ErrorMessage
           message={error instanceof Error ? error.message : "Unknown error"}
         />
-      )}
-
-      {data?.results?.length === 0 && (
-        <p>No movies found. Try a different search query.</p>
       )}
 
       {/* Рендеримо список фільмів, якщо є дані */}
@@ -72,7 +76,7 @@ export default function App() {
           marginPagesDisplayed={1}
           onPageChange={handlePageClick}
           forcePage={page - 1}
-          renderOnZeroPageCount={null}  // не рендерити ,якщо pageCount = 0
+          renderOnZeroPageCount={null}  
           containerClassName={css.pagination}
           activeClassName={css.active}
           nextLabel="→"
